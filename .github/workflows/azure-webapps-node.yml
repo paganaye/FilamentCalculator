@@ -6,7 +6,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: your-app-name    # set this to your application's name
   AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '22.x'                # Version LTS supportée par Azure en juin 2026
+  NODE_VERSION: '24.x'                # Version LTS supportée par GitHub Actions
 
 permissions:
   contents: read
@@ -22,6 +22,13 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
+
+    - name: Create package-lock.json if missing
+      run: |
+        if [ ! -f "package-lock.json" ]; then
+          npm init -y
+          npm install --package-lock-only
+        fi
 
     - name: npm install, build, and test
       run: |
