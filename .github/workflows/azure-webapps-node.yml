@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: your-app-name    # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '24.x'                # Version LTS supportée par GitHub Actions
+  AZURE_WEBAPP_NAME: your-app-name    # Remplacez par votre nom d'app Azure
+  AZURE_WEBAPP_PACKAGE_PATH: '.'      # Chemin de votre projet (racine par défaut)
+  NODE_VERSION: '24.x'                # Version LTS recommandée par GitHub Actions
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Node.js
+    - name: Set up Node.js (v24.x)
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
@@ -26,17 +26,21 @@ jobs:
     - name: Create package-lock.json if missing
       run: |
         if [ ! -f "package-lock.json" ]; then
+          echo "⚠️ package-lock.json manquant - création automatique..."
           npm init -y
           npm install --package-lock-only
+          echo "✅ package-lock.json créé avec succès"
         fi
 
-    - name: npm install, build, and test
+    - name: Install dependencies
+      run: npm ci --omit=dev  # Utilise le lockfile pour une installation reproductible
+
+    - name: Build and test
       run: |
-        npm install
         npm run build --if-present
         npm run test --if-present
 
-    - name: Upload artifact for deployment job
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: node-app
@@ -52,12 +56,12 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-    - name: Download artifact from build job
+    - name: Download artifact
       uses: actions/download-artifact@v4
       with:
         name: node-app
 
-    - name: 'Deploy to Azure WebApp'
+    - name: Deploy to Azure WebApp
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
       with:
